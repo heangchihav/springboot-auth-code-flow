@@ -6,8 +6,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="resource" />
+        <module name="client" />
         <module name="pure-client" />
+        <module name="resource" />
         <module name="auth-code-flow" />
       </profile>
     </annotationProcessing>
@@ -15,6 +16,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="auth-code-flow" options="-parameters" />
+      <module name="client" options="-parameters" />
       <module name="pure-client" options="-parameters" />
       <module name="resource" options="-parameters" />
     </option>
