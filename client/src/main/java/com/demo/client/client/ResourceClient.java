@@ -4,8 +4,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -41,7 +44,7 @@ public class ResourceClient {
     }
 
     /**
-     * Fetches data from the resource server using OAuth2 client credentials flow.
+     * Fetches data from resource server using OAuth2 client credentials flow.
      * This method demonstrates the complete OAuth2 client credentials flow:
      * 
      * 1. Create an OAuth2 authorize request with client registration ID
@@ -60,7 +63,7 @@ public class ResourceClient {
      * @return String response from the resource server
      * @throws Exception if token acquisition or HTTP request fails
      */
-    public String fetchData() {
+    public String fetchDataWithClientCredentials() {
         // Step 1: Create OAuth2 authorize request for client credentials flow
         var authRequest = OAuth2AuthorizeRequest
                 .withClientRegistrationId("keycloak-client")
@@ -82,6 +85,50 @@ public class ResourceClient {
                 String.class);
 
         // Step 5: Return response body
+        return response.getBody();
+    }
+
+    /**
+     * Alternative method to fetch data using an existing authenticated user's
+     * token.
+     * This method is useful when the frontend/user is already authenticated
+     * through OAuth2 authorization code flow and we want to reuse their existing
+     * token
+     * instead of performing client credentials authentication again.
+     * 
+     * Use cases:
+     * - When user is already logged into the system
+     * - To avoid double authentication (authorization code + client credentials)
+     * - When you have access to the user's OAuth2AuthenticationToken
+     * - In microservices where authentication context is passed between services
+     * 
+     * This approach is more efficient because:
+     * - No additional token request to authorization server
+     * - Faster response time
+     * - Uses user's existing session/token
+     * - Avoids unnecessary authentication round-trips
+     * 
+     * @param accessToken The user's existing access token from their authentication
+     * @return String response from the resource server
+     * @throws Exception if HTTP request fails
+     */
+    public String fetchDataWithExistingToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String incomingToken = null;
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            incomingToken = jwtAuthenticationToken.getToken().getTokenValue();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(incomingToken); // Sets Authorization: Bearer <token>
+
+        // Make authenticated request to resource server using user's token
+        var response = restTemplate.exchange(resourceServiceUrl + "/data",
+                HttpMethod.GET,
+                new HttpEntity<>(headers), // Entity with headers, no body for GET
+                String.class);
+
         return response.getBody();
     }
 }

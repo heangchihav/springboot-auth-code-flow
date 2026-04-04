@@ -26,12 +26,12 @@ public class ResourceService {
     }
 
     /**
-     * Fetches data from the external resource server.
+     * Fetches data from external resource server.
      * This method demonstrates the service layer pattern where business logic
      * can be added here (validation, transformation, caching, etc.) before
      * or after calling the HTTP client.
      * 
-     * Currently, it simply delegates to the ResourceClient, but could be extended
+     * Currently, it simply delegates to ResourceClient, but could be extended
      * to include:
      * - Data validation
      * - Response transformation
@@ -42,6 +42,29 @@ public class ResourceService {
      * @return String response from the resource server
      */
     public String fetchDataFromResource() {
-        return resourceClient.fetchData();
+        return resourceClient.fetchDataWithClientCredentials();
+    }
+
+    /**
+     * Alternative method to fetch data using an existing user's token.
+     * This method demonstrates how to use a user's already authenticated token
+     * instead of performing client credentials authentication again.
+     * 
+     * Use cases:
+     * - When user is already logged into the system
+     * - To avoid double authentication (authorization code + client credentials)
+     * - When you have access to the user's OAuth2AuthenticationToken
+     * - In microservices where authentication context is passed between services
+     * 
+     * This approach is more efficient because:
+     * - No additional token request to the authorization server
+     * - Faster response time
+     * - Uses the user's existing session/token
+     * - Avoids unnecessary authentication round-trips
+     * 
+     * @return String response from the resource server
+     */
+    public String fetchDataFromResourceWithToken() {
+        return resourceClient.fetchDataWithExistingToken();
     }
 }
